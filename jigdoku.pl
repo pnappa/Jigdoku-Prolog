@@ -44,22 +44,25 @@ completegrid(X) :- not(intersectgrid(X)), makesgrid(X).
 %
 % QUESTION 2
 %
-badfn(X) :- false.
 
-nextto([A,_], [C,_]) :- A=C+1.
-nextto([A,_], [C,_]) :- C=A+1.
-nextto([_,B], [_,D]) :- B=D+1.
-nextto([_,B], [_,D]) :- D=B+1.
+headtail([H|T], H, T).
+
+nextto([A,B], [C,B]) :- A is C+1.
+nextto([A,B], [C,B]) :- C is A+1.
+nextto([A,B], [A,D]) :- B is D+1.
+nextto([A,B], [A,D]) :- D is B+1.
 
 %indicates whether any member of the current set is next to this var
-setadjacent([H | T], Var) :- nextto(H, Var).
-setadjacent([H | T], Var) :- setadjacent(T, Var).
+setadjacent([H | _], Var) :- nextto(H, Var).
+setadjacent([_ | T], Var) :- setadjacent(T, Var).
 
 %closure is complete when we've removed all elements from the Unseen set
 closure(_, [], []).
 %we can find it! so we add the head to the seen list, and replace the remainder into the unseen list
+closure(Seen, [HUnseen|TUnseen], []) :- setadjacent(Seen, HUnseen), closure([HUnseen | Seen], TUnseen, []).
 closure(Seen, [HUnseen|TUnseen], Remainder) :- setadjacent(Seen, HUnseen), closure([HUnseen | Seen], [Remainder | TUnseen], []).
 %can't find it? add the head of unseen to remainder
+closure(Seen, [HUnseen|TUnseen], []) :- closure(Seen, TUnseen, HUnseen).
 closure(Seen, [HUnseen|TUnseen], Remainder) :- closure(Seen, TUnseen, [HUnseen | Remainder]).
 % Seen = set of nodes we have seen and validated
 % Unseen = (Universe \ Seen) \ Attempted
