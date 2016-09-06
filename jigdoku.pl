@@ -4,6 +4,7 @@
 %
 % QUESTION 1
 %
+% TODO: alternative way, which is check column length, then check all row lengths, then sort the sum of the rows, then assert that the first is 1,1 and then each cell is one more than the previous
 % TODO: test intersect row
 % if any of the cells are the same
 intersectrow([HR0|_], [HR0|_]).
@@ -43,7 +44,7 @@ completegrid(X) :- not(intersectgrid(X)), makesgrid(X).
 
 %
 % QUESTION 2
-%
+% TODO: test all these functions, yo
 
 headtail([H|T], H, T).
 
@@ -70,4 +71,36 @@ closure(Seen, [HUnseen|TUnseen], Remainder) :- closure(Seen, TUnseen, [HUnseen |
 %closure(Seen, Unseen, Attempted) :- .
 
 %continuous if the closure of the first cell equals the rest of the set
-contiguousgrid([H|T]) :- closure([H], T, []).
+contiguousregion([H|T]) :- closure([H], T, []).
+
+
+%
+% QUESTION 3
+%
+
+%define this to validate all rows
+contiguousgrid([]).
+contiguousgrid([H|T]) :- contiguousregion(H), contiguousgrid(T).
+
+%return the row given by the rownum
+nth(1, Item, [H|T]) :- Item = H.
+nth(Itemnum, Item, [H|T]) :- nth(Nextitem, Item, T), Itemnum is Nextitem+1.
+
+%yield the row out of the space
+rowslice(Rownum, Row, Space) :- nth(Rownum, Row, Space).
+%yield the column out of the space
+colslice(_, _, []).
+%colslice(Colnum, Col, [HSpace|[]]) :- nth(Colnum, X, HSpace), Col=[X|NewCol].
+colslice(Colnum, Col, [HSpace|TSpace]) :- nth(Colnum, X, HSpace), Col=[X|NewCol], colslice(Colnum, NewCol, TSpace).
+
+% predicate to query the grid location
+% grab the nth row, then nth cell in that row
+query(Value, Space, XPos, YPos) :- nth(YPos, Row, Space), nth(XPos, Value, Row).
+
+
+% predicate to check whether the supplied state in progress is valid
+%validstate(Grid, Space) :- validrows(Grid), transpose(Grid, Transpose), validrows(Transpose), validjigsaw(Grid, Space, Solution
+
+%check that the space is valid
+%check that the puzzle is valid
+%solve(Solution, Grid, Space) :- length(Space, 9), completegrid(Grid), contiguousgrid(Grid), validstate(Space)
