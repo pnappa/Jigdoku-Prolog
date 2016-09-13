@@ -5,42 +5,13 @@
 %
 % QUESTION 1
 %
-% TODO: alternative way, which is check column length, then check all row lengths, then sort the sum of the rows, then assert that the first is 1,1 and then each cell is one more than the previous
-% TODO: test intersect row
-% if any of the cells are the same
-intersectrow([HR0|_], [HR0|_]).
-intersectrow([HR0|TR0], [_|TR1]) :- intersectrow([HR0|TR0], TR1).
-intersectrow([_|TR0], [HR1|TR1]) :- intersectrow(TR0, [HR1|TR1]).
 
-% TODO: test intersect grid
-% check every combination of rows if they intersect
-intersectgrid([H |[TH | _]]) :- intersectrow(H, TH).
-intersectgrid([H |[_ | TT]]) :- intersectgrid([H | TT]).
-intersectgrid([_ |[TH | TT]]) :- intersectgrid([TH | TT]).
-
-
-%TODO test rowlengthcheck
-%default case
-rowlengthcheck([]).
-%make sure this row is 9, and check the rest
-rowlengthcheck([H|T]) :- length(H, 9), rowlengthcheck(T).
-
-%TODO test cellvalcheck
-cellvalcheck([]).
-%make sure values within bounds and check next
-cellvalcheck([[A,B] | T]) :- A >= 1, A =< 9, B >= 1, B =< 9, cellvalcheck(T).
-
-%TODO test rowvalcheck
-rowvalcheck([]).
-%check every cell for this row, then check remainder rows
-rowvalcheck([H | T]) :- cellvalcheck(H), rowvalcheck(T).
-
-%check that the length of the grid is 9, and each row has length 9, and minimum value is each is 1, and max is 9
-makesgrid(X) :- length(X,9), rowlengthcheck(X), rowvalcheck(X).
-
-% check first all subgrids dont intersect
-% then all values are within range and 9 rows and 9 columns
-completegrid(X) :- not(intersectgrid(X)), makesgrid(X).
+corlength(List) :- length(List, 9).
+%convert the flattened list into a 2dig number representing coords
+superlist([], []).
+superlist([X,Y|TList], Output) :- superlist(TList, NewOutput), Output = [A|NewOutput], A is 10*X+Y.
+%rows = 9, cols = 9, make sure each coord in range, then construct numbers representing cart coords, and make sure all distinct
+completegrid(X) :- length(X, 9), maplist(corlength, X), flatten(X, FlatX), FlatX ins 1..9, superlist(FlatX, Suplist), all_distinct(Suplist).
 
 
 %
