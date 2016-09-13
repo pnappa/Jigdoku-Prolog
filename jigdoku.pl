@@ -1,6 +1,6 @@
 % Patrick Nappa
 % 440243449
-use_module(library(clpfd)).
+:- use_module(library(clpfd)).
 
 %
 % QUESTION 1
@@ -47,8 +47,6 @@ completegrid(X) :- not(intersectgrid(X)), makesgrid(X).
 % QUESTION 2
 % TODO: test all these functions, yo
 
-headtail([H|T], H, T).
-
 nextto([A,B], [C,B]) :- A is C+1.
 nextto([A,B], [C,B]) :- C is A+1.
 nextto([A,B], [A,D]) :- B is D+1.
@@ -92,12 +90,6 @@ jigsawslice(_, [], _).
 jigsawslice(Space, [HCoord|[]], Jigsaw) :- query(JigVal, Space, HCoord), Jigsaw=[JigVal].
 jigsawslice(Space, [HCoord|TCoords], Jigsaw) :- query(JigVal, Space, HCoord), Jigsaw=[JigVal|RemJig], jigsawslice(Space, TCoords, RemJig).
 
-%yield the row out of the space
-%rowslice(Rownum, Row, Space) :- nth(Rownum, Row, Space).
-%yield the column out of the space
-%colslice(_, _, []).
-%colslice(Colnum, Col, [HSpace|TSpace]) :- nth(Colnum, X, HSpace), Col=[X|NewCol], colslice(Colnum, NewCol, TSpace).
-
 % predicate to query the grid location
 % grab the nth row, then nth cell in that row
 query(Value, Space, XPos, YPos) :- nth(XPos, Row, Space), nth(YPos, Value, Row).
@@ -115,19 +107,13 @@ jigsawlist(_, [], _).
 jigsawlist(Space, [HGrid|[]], JigsawList) :- jigsawslice(Space, HGrid, Jigsaw), JigsawList=[Jigsaw].
 jigsawlist(Space, [HGrid|TGrid], JigsawList) :- jigsawslice(Space, HGrid, Jigsaw), JigsawList=[Jigsaw|RemainderJigsaw], jigsawlist(Space, TGrid, RemainderJigsaw).
 
-print([]).
-print([H|T]) :- print_row(H), write('|'), nl, print(T).
-
-print_row([]).
-print_row([H|T]) :- write('|'), write(H), print_row(T).
-
 %solve(Solution, Grid, Space) :- length(Space, 9), completegrid(Grid), contiguousgrid(Grid), validstate(Space)
 solve(Solution, Grid, Space) :-
-	%Solution = [[A1, A2, A3, A4, A5, A6, A7, A8, A9], [B1, B2, B3, B4, B5, B6, B7, B8, B9], [C1, C2, C3, C4, C5, C6, C7, C8, C9], [D1, D2, D3, D4, D5, D6, D7, D8, D9], [E1, E2, E3, E4, E5, E6, E7, E8, E9], [F1, F2, F3, F4, F5, F6, F7, F8, F9], [G1, G2, G3, G4, G5, G6, G7, G8, G9], [H1, H2, H3, H4, H5, H6, H7, H8, H9], [I1, I2, I3, I4, I5, I6, I7, I8, I9], [J1, J2, J3, J4, J5, J6, J7, J8, J9]],
 	Solution = Space,
 	
 	%all numbers in range 1..9
-	validlist(Solution, 1,9),
+	flatten(Solution, FlatSol),
+	FlatSol ins 1..9,
 
 	%generate a list of the jigsaw pieces
 	jigsawlist(Solution, Grid, JigsawList),
@@ -136,10 +122,8 @@ solve(Solution, Grid, Space) :-
 	%all numbers unique in each row/col/jigsaw
 	uniquelist(Solution),	%note this is a list of each of the rows, so can be used in place instead
 	uniquelist(ColList),
-	%print(ColList),
 	uniquelist(JigsawList),
-	flatten(Solution, FlatSol),
+	%force prolog to actually solve it
 	label(FlatSol).
-	%print([[A1, A2, A3, A4, A5, A6, A7, A8, A9], [B1, B2, B3, B4, B5, B6, B7, B8, B9], [C1, C2, C3, C4, C5, C6, C7, C8, C9], [D1, D2, D3, D4, D5, D6, D7, D8, D9], [E1, E2, E3, E4, E5, E6, E7, E8, E9], [F1, F2, F3, F4, F5, F6, F7, F8, F9], [G1, G2, G3, G4, G5, G6, G7, G8, G9], [H1, H2, H3, H4, H5, H6, H7, H8, H9], [I1, I2, I3, I4, I5, I6, I7, I8, I9], [J1, J2, J3, J4, J5, J6, J7, J8, J9]]).
 
 
