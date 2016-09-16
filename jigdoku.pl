@@ -1,6 +1,7 @@
 % Patrick Nappa
 % 440243449
 :- use_module(library(clpfd)).
+:- use_module(library(lists)).
 
 %
 % QUESTION 1
@@ -41,20 +42,12 @@ closure(Seen, [HUnseen|TUnseen], Remainder) :- closure(Seen, TUnseen, [HUnseen |
 %closure(Seen, Unseen, Attempted) :- .
 
 %continuous if the closure of the first cell equals the rest of the set
-contiguousregion([H|T]) :- closure([H], T, []).
+contiguousgrid([H|T]) :- closure([H], T, []).
 
 
 %
 % QUESTION 3
 %
-
-%define this to validate all rows
-contiguousgrid([]).
-contiguousgrid([H|T]) :- contiguousregion(H), contiguousgrid(T).
-
-%return the row given by the rownum
-nth(1, Item, [H|T]) :- Item = H.
-nth(Itemnum, Item, [H|T]) :- nth(Nextitem, Item, T), Itemnum is Nextitem+1.
 
 %yield the jigsaw row of the space
 jigsawslice(_, [], _).
@@ -66,34 +59,37 @@ jigsawslice(Space, [HCoord|TCoords], Jigsaw) :- query(JigVal, Space, HCoord), Ji
 query(Value, Space, XPos, YPos) :- nth(XPos, Row, Space), nth(YPos, Value, Row).
 query(Value, Space, [H,T]) :- query(Value, Space, H, T).
 
-%checks the list if all are within range of Min..Max
-validlist([], _, _).
-validlist([H|T], Min, Max) :- H ins Min..Max, validlist(T, Min, Max).  
-%check all in each list is unique
-uniquelist([]).
-uniquelist([H|T]) :- all_different(H), uniquelist(T).
-
 %generate the list of lists given the list of lists of coords of the jigsaw pieces
 jigsawlist(_, [], _).
 jigsawlist(Space, [HGrid|[]], JigsawList) :- jigsawslice(Space, HGrid, Jigsaw), JigsawList=[Jigsaw].
 jigsawlist(Space, [HGrid|TGrid], JigsawList) :- jigsawslice(Space, HGrid, Jigsaw), JigsawList=[Jigsaw|RemainderJigsaw], jigsawlist(Space, TGrid, RemainderJigsaw).
 
-%solve(Solution, Grid, Space) :- length(Space, 9), completegrid(Grid), contiguousgrid(Grid), validstate(Space)
-solve(Solution, Grid, Space) :-
-	Solution = Space,
+%for a given row, construct the jigsaw list
+jiggo(Solution, [], []).
+jiggo(Solution, [[Row,Col]|T], [HJig|TJig]) :- nth1(Row, Solution, SlickRow), nth1(Col, SlickRow, HJig), jiggo(Solution, T, TJig).
+%jiggo(Solution, GridRow, Jigsawlist) :-
+
+solve(Grid, Sudoku, X) :-
+	X = Sudoku,
+
+	%validate the arguments
+	completegrid(Grid),
+	maplist(contiguousgrid, Grid),
+	maplist(corlength, Sudoku),
+	corlength(Sudoku),
 	
 	%all numbers in range 1..9
-	flatten(Solution, FlatSol),
+	flatten(X, FlatSol),
 	FlatSol ins 1..9,
 
 	%generate a list of the jigsaw pieces
-	jigsawlist(Solution, Grid, JigsawList),
-	transpose(Solution, ColList), %columns are simply transpose of rows
+	jigsawlist(X, Grid, JigsawList),
+	transpose(X, ColList), %columns are simply transpose of rows
 
 	%all numbers unique in each row/col/jigsaw
-	uniquelist(Solution),	%note this is a list of each of the rows, so can be used in place instead
-	uniquelist(ColList),
-	uniquelist(JigsawList),
+	maplist(all_different, X),	%note this is a list of each of the rows, so can be used in place instead
+	maplist(all_different, ColList),
+	maplist(all_different, JigsawList),
 	%force prolog to actually solve it
 	label(FlatSol).
 
