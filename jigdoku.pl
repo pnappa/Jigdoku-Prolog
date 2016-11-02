@@ -17,79 +17,66 @@ completegrid(X) :- length(X, 9), maplist(corlength, X), flatten(X, FlatX), FlatX
 
 %
 % QUESTION 2
-% TODO: test all these functions, yo
 
 nextto([A,B], [C,B]) :- A is C+1.
 nextto([A,B], [C,B]) :- C is A+1.
 nextto([A,B], [A,D]) :- B is D+1.
 nextto([A,B], [A,D]) :- D is B+1.
 
-%indicates whether any member of the current set is next to this var
-setadjacent([H | _], Var) :- nextto(H, Var).
-setadjacent([_ | T], Var) :- setadjacent(T, Var).
+%succeed if any are nextto the coord
+nexttolist(A, [H|_]) :- nextto(A, H).
+nexttolist(A, [_|T]) :- nexttolist(A, T).
 
-%closure is complete when we've removed all elements from the Unseen set
+%the head of the unseen list next to any of the seen list
+closure(Seen, [HUnseen|TUnseen], Remainder) :- 
+	nexttolist(HUnseen, Seen),
+	append(TUnseen, Remainder, NewUnseen),
+	closure([HUnseen|Seen], NewUnseen, []).
+%the head is not next to anything, add to the remainder list	
+closure(Seen, [HUnseen|TUnseen], Remainder) :- closure(Seen, TUnseen, [HUnseen|Remainder]).
+	
+%the Unseen and remainder list is empty therefore done
 closure(_, [], []).
-%we can find it! so we add the head to the seen list, and replace the remainder into the unseen list
-closure(Seen, [HUnseen|TUnseen], []) :- setadjacent(Seen, HUnseen), closure([HUnseen | Seen], TUnseen, []).
-closure(Seen, [HUnseen|TUnseen], Remainder) :- setadjacent(Seen, HUnseen), closure([HUnseen | Seen], [Remainder | TUnseen], []).
-%can't find it? add the head of unseen to remainder
-closure(Seen, [HUnseen|TUnseen], []) :- closure(Seen, TUnseen, HUnseen).
-closure(Seen, [HUnseen|TUnseen], Remainder) :- closure(Seen, TUnseen, [HUnseen | Remainder]).
-% Seen = set of nodes we have seen and validated
-% Unseen = (Universe \ Seen) \ Attempted
-% Attempted = set of nodes we have seen and couldn't fit with the current Seen list
-%closure(Seen, Unseen, Attempted) :- .
 
 %continuous if the closure of the first cell equals the rest of the set
+%also, a grid is contiguous over the empty set (fight me in real life if you disagree)
+contiguousgrid([]).
 contiguousgrid([H|T]) :- closure([H], T, []).
-
 
 %
 % QUESTION 3
 %
 
-%yield the jigsaw row of the space
-jigsawslice(_, [], _).
-jigsawslice(Space, [HCoord|[]], Jigsaw) :- query(JigVal, Space, HCoord), Jigsaw=[JigVal].
-jigsawslice(Space, [HCoord|TCoords], Jigsaw) :- query(JigVal, Space, HCoord), Jigsaw=[JigVal|RemJig], jigsawslice(Space, TCoords, RemJig).
-
-% predicate to query the grid location
-% grab the nth row, then nth cell in that row
-query(Value, Space, XPos, YPos) :- nth(XPos, Row, Space), nth(YPos, Value, Row).
-query(Value, Space, [H,T]) :- query(Value, Space, H, T).
-
-%generate the list of lists given the list of lists of coords of the jigsaw pieces
-jigsawlist(_, [], _).
-jigsawlist(Space, [HGrid|[]], JigsawList) :- jigsawslice(Space, HGrid, Jigsaw), JigsawList=[Jigsaw].
-jigsawlist(Space, [HGrid|TGrid], JigsawList) :- jigsawslice(Space, HGrid, Jigsaw), JigsawList=[Jigsaw|RemainderJigsaw], jigsawlist(Space, TGrid, RemainderJigsaw).
-
 %for a given row, construct the jigsaw list
-jiggo(Solution, [], []).
-jiggo(Solution, [[Row,Col]|T], [HJig|TJig]) :- nth1(Row, Solution, SlickRow), nth1(Col, SlickRow, HJig), jiggo(Solution, T, TJig).
+jiggo(_, [], []).
+jiggo(Solution, [HJig|TJig], [[Row,Col]|T]) :- nth1(Row, Solution, SlickRow), nth1(Col, SlickRow, HJig), jiggo(Solution, TJig, T).
 %jiggo(Solution, GridRow, Jigsawlist) :-
+recjiggo(_, [], []).
+recjiggo(Solution, [H|T], [Jighead|Jigtail]) :- jiggo(Solution, H, Jighead), recjiggo(Solution, T, Jigtail).
 
 solve(Grid, Sudoku, X) :-
-	X = Sudoku,
-
 	%validate the arguments
-	completegrid(Grid),
-	maplist(contiguousgrid, Grid),
 	maplist(corlength, Sudoku),
 	corlength(Sudoku),
+
+	X = Sudoku,
 	
 	%all numbers in range 1..9
 	flatten(X, FlatSol),
 	FlatSol ins 1..9,
 
 	%generate a list of the jigsaw pieces
-	jigsawlist(X, Grid, JigsawList),
+	recjiggo(X, JigsawList, Grid),
 	transpose(X, ColList), %columns are simply transpose of rows
 
 	%all numbers unique in each row/col/jigsaw
 	maplist(all_different, X),	%note this is a list of each of the rows, so can be used in place instead
 	maplist(all_different, ColList),
 	maplist(all_different, JigsawList),
+
+	%late check continuity
+	maplist(contiguousgrid, Grid),
+
 	%force prolog to actually solve it
 	label(FlatSol).
 
